@@ -166,3 +166,266 @@ static void wifi_start(void *esp_netif,esp_event_base_t event_base, int32_t even
 
 }
 
+// Public function to initialize Wi-Fi station mode
+esp_err_t wifi_sta_init(EventGroupHandle_t event_group){
+    esp_err_t esp_ret;
+    ESP_LOGI(TAG,"Starting Wi-Fi station mode");
+    if(event_group!=NULL){
+        s_wifi_event_group=event_group;
+    } else {
+        ESP_LOGE(TAG, "Event group is NULL");
+        return ESP_FAIL;
+    }
+    esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_WIFI_STA();
+    s_wifi_netif = esp_netif_new(&netif_config);
+    if(s_wifi_netif==NULL) {
+        ESP_LOGE(TAG, "Failed to create netif");
+        return ESP_FAIL;
+    }   
+    s_wifi_driver=esp_wifi_create_if_driver(WIFI_IF_STA);
+    if(s_wifi_driver==NULL) {
+        ESP_LOGE(TAG, "Failed to create wifi driver");
+        return ESP_FAIL;
+    }
+
+    esp_ret =esp_netif_attach(s_wifi_netif,s_wifi_driver);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to attach netif to wifi driver");
+        return ESP_FAIL;
+    }
+    //
+    esp_ret=esp_event_handler_register(WIFI_EVENT,WIFI_EVENT_STA_START, &on_wifi_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register Wi-Fi event handler");
+        return ESP_FAIL;
+    }
+    //
+     esp_ret=esp_event_handler_register(WIFI_EVENT,WIFI_EVENT_STA_STOP, &on_wifi_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register Wi-Fi stop event handler");
+        return ESP_FAIL;
+    }
+    //
+     esp_ret=esp_event_handler_register(WIFI_EVENT,WIFI_EVENT_STA_CONNECTED, &on_wifi_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register Wi-Fi connected event handler");
+        return ESP_FAIL;
+    }
+    //
+     esp_ret=esp_event_handler_register(WIFI_EVENT,WIFI_EVENT_STA_DISCONNECTED, &on_wifi_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register Wi-Fi disconnected event handler");
+        return ESP_FAIL;
+    }
+#if CONFIG_WIFI_STA_CONNECT_IPV4 || CONFIG_WIFI_STA_CONNECT_UNSPECIFIED
+    esp_ret=esp_event_handler_register(IP_EVENT,IP_EVENT_STA_GOT_IP, &on_ip_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IP event handler");
+        return ESP_FAIL;
+    }
+#endif
+
+#if CONFIG_WIFI_STA_CONNECT_IPV6 || CONFIG_WIFI_STA_CONNECT_UNSPECIFIED
+    esp_ret=esp_event_handler_register(IP_EVENT,IP_EVENT_STA_GOT_IP6, &on_ip_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IPv6 event handler");
+        return ESP_FAIL;
+    }
+#endif
+esp_ret =esp_event_handler_register(IP_EVENT,IP_EVENT_STA_LOST_IP, &on_ip_event, NULL);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IP lost event handler");
+        return ESP_FAIL;
+    }
+   
+    esp_ret=esp_register_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register shutdown handler");
+        return ESP_FAIL;
+    }   
+
+    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+    esp_ret=esp_wifi_init(&cfg);    
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize Wi-Fi");
+        return ESP_FAIL;
+    }
+
+    esp_ret=esp_wifi_set_mode(WIFI_MODE_STA);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set Wi-Fi mode");
+        return ESP_FAIL;
+    }
+
+#if CONFIG_WIFI_STA_AUTH_OPEN
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_OPEN;
+#elif CONFIG_WIFI_STA_AUTH_WEP
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WEP;
+#elif CONFIG_WIFI_STA_AUTH_WPA_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WPA_PSK;
+#elif CONFIG_WIFI_STA_AUTH_WPA2_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WPA2_PSK;
+#elif CONFIG_WIFI_STA_AUTH_WPA_WPA2_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WPA_WPA2_PSK;
+#elif CONFIG_WIFI_STA_AUTH_WPA3_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WPA3_PSK;
+#elif CONFIG_WIFI_STA_AUTH_WPA2_WPA3_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WPA2_WPA3_PSK;
+#elif CONFIG_WIFI_STA_AUTH_WAPI_PSK
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_WAPI_PSK;
+#else
+    const wifi_auth_mode_t auth_mode = WIFI_AUTH_OPEN;
+#endif
+
+#if CONFIG_WIFI_STA_WPA3_SAE_PWE_HUNT_AND_PECK
+  const wifi_sae_pwe_method_t sae_pwe_method = WPA3_SAE_PWE_HUNT_AND_PECK;
+#elif CONFIG_WIFI_STA_WPA3_SAE_PWE_H2E
+    const wifi_sae_pwe_method_t sae_pwe_method = WPA3_SAE_PWE_HASH_TO_ELEMENT;
+#elif CONFIG_WIFI_STA_WPA3_SAE_PWE_BOTH
+    const wifi_sae_pwe_method_t sae_pwe_method = WPA3_SAE_PWE_BOTH;
+#else 
+
+    const wifi_sae_pwe_method_t sae_pwe_method = WPA3_SAE_PWE_UNSPECIFIED;
+#endif
+ wifi_config_t wifi_config = {
+        .sta = {
+            .ssid = CONFIG_WIFI_STA_SSID,
+            .password = CONFIG_WIFI_STA_PASSWORD,
+            .threshold.authmode = auth_mode,
+            .sae_pwe_h2e = sae_pwe_method,
+        },
+    };
+    esp_ret=esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set Wi-Fi configuration");
+        return ESP_FAIL;
+    }
+    esp_ret=esp_wifi_start();
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start Wi-Fi");
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+
+}
+
+esp_err_t wifi_sta_stop(void){
+    esp_err_t esp_ret;
+    ESP_LOGI(TAG,"Stopping Wi-Fi station mode");
+    esp_ret=esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_STA_START, &on_wifi_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister Wi-Fi event handler");
+        return ESP_FAIL;
+    }
+    
+
+    esp_ret=esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_STA_STOP, &on_wifi_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister Wi-Fi stop event handler");
+        return ESP_FAIL;
+    }
+
+    esp_ret=esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_STA_CONNECTED, &on_wifi_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister Wi-Fi connected event handler");
+        return ESP_FAIL;
+    }
+    
+
+    esp_ret=esp_event_handler_unregister(WIFI_EVENT,WIFI_EVENT_STA_DISCONNECTED, &on_wifi_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister Wi-Fi disconnected event handler");
+        return ESP_FAIL;
+    }
+
+#if CONFIG_WIFI_STA_CONNECT_IPV4 || CONFIG_WIFI_STA_CONNECT_UNSPECIFIED
+    esp_ret=esp_event_handler_unregister(IP_EVENT,IP_EVENT_STA_GOT_IP, &on_ip_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister IPv4 event handler");
+        return ESP_FAIL;
+    }
+#endif
+
+#if CONFIG_WIFI_STA_CONNECT_IPV6 || CONFIG_WIFI_STA_CONNECT_UNSPECIFIED
+    esp_ret=esp_event_handler_unregister(IP_EVENT,IP_EVENT_STA_GOT_IP6, &on_ip_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister IPv6 event handler");
+        return ESP_FAIL;
+    }
+#endif 
+esp_ret=esp_event_handler_unregister(IP_EVENT,IP_EVENT_STA_LOST_IP, &on_ip_event);
+    if(esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister IP lost event handler");
+        return ESP_FAIL;
+    }
+    esp_ret=esp_unregister_shutdown_handler((shutdown_handler_t)esp_wifi_stop);
+    if(esp_ret==ESP_ERR_INVALID_STATE) {
+        ESP_LOGE(TAG, "Shutdown handler not registered");
+    
+    }else if (esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Failed to unregister shutdown handler");
+        return ESP_FAIL;
+    }
+    esp_ret=esp_wifi_disconnect();
+    if (esp_ret ==ESP_ERR_WIFI_NOT_INIT||esp_ret==ESP_ERR_WIFI_NOT_STARTED) {
+        ESP_LOGI(TAG, "wifi already disconnected or not started");
+    } else if (esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Error (%d): Failed to disconnect Wi-Fi", esp_ret);
+        return ESP_FAIL;
+    }
+    
+    esp_ret=esp_wifi_stop();
+    if (esp_ret ==ESP_ERR_WIFI_NOT_INIT) {
+        ESP_LOGI(TAG, "wifi already stopped or not started");
+    } else if (esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Error (%d): Failed to stop Wi-Fi", esp_ret);
+        return ESP_FAIL;
+    }
+    
+    esp_ret=esp_wifi_deinit();
+    if (esp_ret ==ESP_ERR_WIFI_NOT_INIT) {
+        ESP_LOGI(TAG, "wifi already deinitialized or not started");
+    } else if (esp_ret!=ESP_OK) {
+        ESP_LOGE(TAG, "Error (%d): Failed to deinitialize Wi-Fi", esp_ret);
+        return ESP_FAIL;
+    }
+
+    if(s_wifi_driver!=NULL) {
+        esp_wifi_destroy_if_driver(s_wifi_driver);
+        s_wifi_driver=NULL;
+
+    }
+    if(s_wifi_netif!=NULL){
+        esp_netif_destroy(s_wifi_netif);
+    }
+    if(s_wifi_event_group!=NULL){
+        xEventGroupClearBits(s_wifi_event_group,WIFI_STA_CONNECTED_BIT);
+        xEventGroupClearBits(s_wifi_event_group,WIFI_STA_IPV4_OBTAINED_BIT);
+        xEventGroupClearBits(s_wifi_event_group,WIFI_STA_IPV6_OBTAINED_BIT);
+    }
+
+    s_wifi_netif=NULL;
+
+    ESP_LOGI(TAG,"wifi stopped");
+
+    return ESP_OK;
+
+}
+
+esp_err_t wifi_sta_reconnect(void){
+    esp_err_t esp_ret;
+    esp_ret=wifi_sta_stop();
+    if(esp_ret!=ESP_OK){
+        ESP_LOGE(TAG,"Failed to stop wifi during reconnect");
+        return esp_ret;
+    }
+    esp_ret=wifi_sta_init(NULL);
+    if(esp_ret!=ESP_OK){
+        ESP_LOGE(TAG,"Failed to initialize wifi during reconnect");
+        return esp_ret;
+    }
+    return ESP_OK;
+}
+
+
+

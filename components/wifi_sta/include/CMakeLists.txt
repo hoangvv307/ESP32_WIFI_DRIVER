@@ -8,4 +8,4 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
     INCLUDE_DIRS "${include_dirs}"
-    PRIV_REQUIRES esp_wifi eso_netif)
+    PRIV_REQUIRES esp_wifi esp_netif)
