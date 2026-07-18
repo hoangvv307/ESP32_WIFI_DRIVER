@@ -1,0 +1,14 @@
+ 
+
+build/
+**/build/
+
+
+sdkconfig
+sdkconfig.old
+**/sdkconfig
+**/sdkconfig.old
+
+
+Thumbs.db
+Desktop.ini
