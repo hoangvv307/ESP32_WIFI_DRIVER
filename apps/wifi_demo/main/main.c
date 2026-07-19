@@ -34,6 +34,33 @@ if(esp_ret!=ESP_OK){
     abort();
 }
 
+esp_ret = esp_event_loop_create_default();
+ if (esp_ret!=ESP_OK){
+    ESP_LOGE(TAG," Error (%d): Failed to create default loop",esp_ret);
+    abort();
+ }
 
+ esp_ret =wifi_sta_init(network_event_group);
+ if (esp_ret!=ESP_OK){
+    ESP_LOGE(TAG," Error (%d): Failed to initialize wifi",esp_ret);
+    abort();
+ }
+ ESP_LOGI(TAG,"Waiting to network connect...");
+ network_event_bits=xEventGroupWaitBits(network_event_group,WIFI_STA_CONNECTED_BIT,pdFALSE,pdTRUE,pdMS_TO_TICKS(connection_timeout_ms));
+ if(network_event_bits&WIFI_STA_IPV4_OBTAINED_BIT){
+    ESP_LOGI(TAG,"Obtained Ipv4");
 
+ }else if (network_event_bits&WIFI_STA_IPV6_OBTAINED_BIT){
+    ESP_LOGI(TAG,"Obtained IPv6");
+ }else{
+    ESP_LOGI(TAG,"Failed to obtain IP adress");
+ }
+ while(1){
+    if(network_event_bits&WIFI_STA_CONNECTED_BIT){
+        ESP_LOGI(TAG,"Still connected to wifi network");
+    }else{
+        ESP_LOGE(TAG,"Lost connected to wifi network");
+    }
+ }
+   xTaskDelay(sleep_ms/portTICK_PERIOD_MS);
 }
