@@ -15,8 +15,9 @@ static const char *TAG="wifi_demo";
 void app_main(void)
 {
     esp_err_t esp_ret;
-    EventGroupHandle_t network_event_group;
+    EventGroupHandle_t network_event_group= NULL;
     EventBits_t network_event_bits;
+    network_event_group = xEventGroupCreate();
 
 esp_ret= nvs_flash_init();
 if((esp_ret==ESP_ERR_NVS_NO_FREE_PAGES)||(esp_ret==ESP_ERR_NVS_NEW_VERSION_FOUND)){
@@ -62,5 +63,5 @@ esp_ret = esp_event_loop_create_default();
         ESP_LOGE(TAG,"Lost connected to wifi network");
     }
  }
-   xTaskDelay(sleep_ms/portTICK_PERIOD_MS);
+   vTaskDelay(sleep_ms/portTICK_PERIOD_MS);
 }
