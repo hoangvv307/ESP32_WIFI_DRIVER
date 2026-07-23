@@ -4,7 +4,7 @@ First, we need to know what is driver and what it can do to our project.
 
 Driver such as a translator between hardware and operating system. Without driver, your OS or specific your chip Esp32 would not know how to "talk to" a part of hardware.
 
-I will demomstrate to you throughout this diagram.
+I will demonstrate to you throughout this diagram.
 
 <img width="856" height="733" alt="Screenshot 2026-07-23 223459" src="https://github.com/user-attachments/assets/8a1b2a68-0033-41e4-92cf-47a333fcf8d8" />
 
