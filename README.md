@@ -18,7 +18,7 @@ This project implements a WiFi connectivity module on the ESP32 using the ESP-ID
 
 By the way, to help me build this cool feature I need to reference Shawn Hymel's Youtube channel, which helped me a lot during implementation. I strongly recommend visiting his channel, trust me it's worth checking.
 
-To begin with, Wifi [Driver](DRIVER.md) help with processing
+To begin with, Wifi [DRIVER](DRIVER.md) help with processing
 
 
 
