@@ -1,3 +1,27 @@
+# ESP32 Wifi Driver Project
+
+A custom WiFi driver implementation and configuration built on top of ESP-IDF for the ESP32 platform.
+
+<img width="1672" height="941" alt="ChatGPT Image Jul 23, 2026, 11_10_01 PM" src="https://github.com/user-attachments/assets/a68e55b1-54e8-4107-8155-0512d0d3b956" />
+credit: Chat-GPT.
+
+## Table of contents
+- [Overall](#overall)
+- [Components](#components)
+- [Hardware Used](#hareware_used)
+- [Software](#software)
+- [Mistake & fix](#mistake--fix)
+
+# Overall
+
+This project implements a WiFi connectivity module on the ESP32 using the ESP-IDF framework. It handles station mode connection, event network state management and IP process. Additionally, this project will delves into low-level microcontroller concepts, using internal API of ESP manufacturer to handle every signal or event that occurs. 
+
+By the way, to help me build this cool feature I need to reference Shawn Hymel's Youtube channel, which helped me a lot during implementation. I strongly recommend visiting his channel, trust me it's worth checking.
+
+To begin with, Wifi [Driver](DRIVER.md) help with processing
+
+
+
 This is how I learn to code my own wifi driver on esp32
 **THIS IS MENUCONFIG OF WIFI STA**
 <img width="1857" height="1092" alt="Screenshot 2026-07-21 231757" src="https://github.com/user-attachments/assets/f1bc48c7-62ba-4b0f-81e8-9b6386c8bc15" />
