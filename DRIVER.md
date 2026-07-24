@@ -14,3 +14,9 @@ As you can see, in his project of SUMOBOT show us where driver is located betwee
 
 Regarding, my work is primary to build such as this driver for wifi feature, having recently Integrated in microcontroller ESP32-DEVKIT-V1.
 
+According to manufactuner,the ESP32 Wi-Fi programming model is depicted as follows:
+
+<img width="878" height="376" alt="Screenshot 2026-07-24 231616" src="https://github.com/user-attachments/assets/8eef7a22-17e3-4e15-84ea-762b9e89bae1" />
+
+You can refer to official document of producer for more information you need.
+
