@@ -70,7 +70,7 @@ E --> A
 
 ---
 
-** CMake
+**CMake**
 
 Each part of the project has its own `CMakeLists.txt`, following the standard ESP-IDF component structure:
 
@@ -98,7 +98,7 @@ This isolates the WiFi driver into a self-contained, reusable component instead 
 
 ---
 
-** Kconfig
+**Kconfig**
 
 The `wifi_sta` component defines its own `Kconfig`, which adds a **"Wifi STA Configuration"** menu inside `idf.py menuconfig`. This allows WiFi credentials and connection behavior to be configured per build, without hardcoding values in the source code.
 
